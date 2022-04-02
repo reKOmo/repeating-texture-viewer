@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repeating texture viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #bg {
+            width: 100%;
+            height: 100%;
+        }
+
+        #drop {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%) translateY(-50%);
+            font-size: 30px;
+            border: 1px solid black;
+            border-radius: 10px;
+            padding: 10px 50px;
+            backdrop-filter: blur(1px);
+            background-color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        #dropText {
+            transition: color 0.13s ease-out;
+        }
+
+        #tileSize {
+            width: 100%;
+        }
+
+        #options {
+            font-size: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="drop">
+        <h1 id="dropText">Drop file here</h1>
+        <div>
+            <p>Options</p>
+            <div id="options">
+                <span>Randomize rotation</span>
+                <input type="checkbox" id="randomRotate">
+                <p>Size</p>
+                <input type="range" id="tileSize" min="0.01" max="0.5" step="0.001" value="0.15">
+            </div>
+        </div>
+    </div>
+    <canvas id="bg"></canvas>
+    <script defer>
+        const can = document.getElementById('bg');
+        const ctx = can.getContext('2d');
+
+        const dropBox = document.getElementById("drop");
+        const tileSizeSilder = document.getElementById("tileSize");
+        const randomRotateCheck = document.getElementById("randomRotate");
+        const dropText = document.getElementById("dropText");
+
+        var bgImage = new Image();
+        bgImage.src = "./sample.png";
+        bgImage.onload = drawBg();
+        // in % of canvas width
+        var tileSize = 0.15;
+        var rotate = false;
+
+        function drawBg() {
+            const tileS = can.width * tileSize;
+            for (let i = 0; i <= can.width; i += tileS) {
+                for (let j = 0; j <= can.height; j += tileS) {
+                    if (rotate) {
+
+                        const x = i + tileS / 2;
+                        const y = j + tileS / 2;
+
+                        let angle = Math.random() * 360
+                        angle = angle - (angle % 90)
+
+                        ctx.translate(x, y);
+                        ctx.rotate(angle * (Math.PI / 180));
+                        ctx.drawImage(bgImage, -tileS / 2, -tileS / 2, tileS, tileS);
+                        ctx.rotate(-angle * (Math.PI / 180));
+                        ctx.translate(-x, -y);
+                    } else {
+                        ctx.drawImage(bgImage, i, j, tileS, tileS);
+                    }
+                }
+            }
+        }
+
+        function handleResize() {
+            const body = document.body,
+                html = document.documentElement;
+
+            const height = Math.max(body.scrollHeight, body.offsetHeight,
+                html.clientHeight, html.scrollHeight, html.offsetHeight);
+
+            const width = Math.max(body.scrollWidth, body.offsetWidth,
+                html.clientWidth, html.scrollWidth, html.offsetWidth);
+
+            can.height = height;
+            can.width = width;
+
+            drawBg();
+        }
+
+        window.onresize = handleResize;
+        window.onload = handleResize;
+
+        dropBox.addEventListener("dragover", (e) => {
+            dropText.style.color = "#52D452";
+            e.preventDefault();
+        })
+
+        dropBox.addEventListener("dragleave", (e) => {
+            dropText.style.color = "#000";
+            e.preventDefault();
+        })
+
+        dropBox.addEventListener('drop', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            dropText.style.color = "#000";
+
+            const files = e.dataTransfer.files;
+            bgImage = new Image();
+
+            bgImage.src = URL.createObjectURL(files[0])
+            bgImage.onload = drawBg;
+        });
+
+        tileSizeSilder.addEventListener("input", (e) => {
+            tileSize = e.target.value;
+            drawBg();
+        })
+
+        randomRotateCheck.addEventListener("input", (e) => {
+            rotate = e.target.checked;
+            drawBg();
+        })
+    </script>
+</body>
+
+</html>
